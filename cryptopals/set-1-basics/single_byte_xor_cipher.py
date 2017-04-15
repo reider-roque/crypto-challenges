@@ -25,6 +25,9 @@ def get_possible_plaintexts(ciphertext, keys):
 
 
 def printable_characters_rank(plaintexts):
+    """Return a list of (plaintext, rank) tuples where the higher the rank,
+       the less non-printable characters are in the plaintext
+    """
     ranked_plaintexts = []
     for plaintext in plaintexts:
         printable_chars_count = 0
@@ -56,10 +59,36 @@ def is_letter(char_code):
     return False
 
 
+def mostly_letters_rank(plaintexts, additional_allowed_chars=[" "]):
+    """Return a list of (plaintext, rank) tuples where the higher the rank,
+       the less non-letter characters are in the plaintext
+    """
+    ranked_plaintexts = []
+    for plaintext in plaintexts:
+        letter_count = 0
+        for byte in plaintext:
+            if is_letter(byte):
+                letter_count +=1
+            elif chr(byte) in additional_allowed_chars:
+                letter_count += 1
+        rank = letter_count / len(plaintext)
+        ranked_plaintexts.append((plaintext, rank))
+
+    ranked_plaintexts.sort(key=lambda tup: tup[1])
+
+    return ranked_plaintexts
+
 
 def letter_frequency_rank(plaintexts, no_letters_rank=1000000):
     # English letter frequency table comes from here - https://www.math.cornell.edu/~mec/2003-2004/cryptography/subs/frequencies.html
-    default_letter_frequencies = {'e': 0.1202, 't': 0.0910, 'a': 0.0812, 'o': 0.0768, 'i': 0.0731, 'n': 0.0695, 's': 0.0628, 'r': 0.0602, 'h': 0.0592, 'd': 0.0432, 'l': 0.0398, 'u': 0.0288, 'c': 0.0271, 'm': 0.0261, 'f': 0.0230, 'y': 0.0211, 'w': 0.0209, 'g': 0.0203, 'p': 0.0182, 'b': 0.0149, 'v': 0.0111, 'k': 0.0069, 'x': 0.0017, 'q': 0.0011, 'j': 0.0010, 'z': 0.0007}
+    default_letter_frequencies = {
+        'e': 0.1202, 't': 0.0910, 'a': 0.0812, 'o': 0.0768, 'i': 0.0731, 
+        'n': 0.0695, 's': 0.0628, 'r': 0.0602, 'h': 0.0592, 'd': 0.0432, 
+        'l': 0.0398, 'u': 0.0288, 'c': 0.0271, 'm': 0.0261, 'f': 0.0230, 
+        'y': 0.0211, 'w': 0.0209, 'g': 0.0203, 'p': 0.0182, 'b': 0.0149, 
+        'v': 0.0111, 'k': 0.0069, 'x': 0.0017, 'q': 0.0011, 'j': 0.0010, 
+        'z': 0.0007
+    }
 
     ranked_plaintexts = []
     for plaintext in plaintexts:
@@ -73,10 +102,8 @@ def letter_frequency_rank(plaintexts, no_letters_rank=1000000):
             else:
                 plaintext_letter_frequencies[char] = 1
 
-        # If there were no letters in the plaintext, then set rank to some large (100) number,
-        # to make sure it goes to the very bottom and skip further processing
+        # If there were no letters in the plaintext, then skip further processing
         if not plaintext_letter_frequencies:
-            ranked_plaintexts.append((plaintext, no_letters_rank))
             continue
 
         # Replace absolute occurence with relative distribution
@@ -92,13 +119,18 @@ def letter_frequency_rank(plaintexts, no_letters_rank=1000000):
                 plaintext_letter_frequency = 0
 
             rank += abs(default_letter_frequency - plaintext_letter_frequency)
- 
+
+            # print("DEBUG: letter = {}".format(letter))
+            # print("DEBUG: default_letter_frequency = {}".format(default_letter_frequency))
+            # print("DEBUG: plaintext_letter_frequency = {}".format(plaintext_letter_frequency))
+            # print("DEBUG: rank = {}".format(rank))
+
         ranked_plaintexts.append((plaintext, rank))
 
-    ranked_plaintexts.sort(key=lambda tup: tup[1], reverse=True)
+    # The closer the rank to number 1, the better
+    ranked_plaintexts.sort(key=lambda tup: abs(1 - tup[1]), reverse=True)
 
     return ranked_plaintexts
-
 
 
 if __name__ == "__main__":
@@ -107,7 +139,7 @@ if __name__ == "__main__":
     keys = get_possible_keys(ciphertext)
     plaintexts = get_possible_plaintexts(ciphertext, keys)
 
-    # printable_characters_ranked_plaintexts = printable_characters_rank(plaintexts)
+    # printable_characters_ranked_plaintexts = mostly_letters_rank(plaintexts)
     # pprint(printable_characters_ranked_plaintexts)
 
     letter_frequency_ranked_plaintexts = letter_frequency_rank(plaintexts)
