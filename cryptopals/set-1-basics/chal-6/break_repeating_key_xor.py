@@ -186,6 +186,7 @@ def letter_frequency_rank(plaintexts, no_letters_rank=1000000):
 
 
 if __name__ == "__main__":
+
     ciphertext = []
     with open("6.txt", 'r') as ct_file:
         ciphertext = ct_file.readlines()
