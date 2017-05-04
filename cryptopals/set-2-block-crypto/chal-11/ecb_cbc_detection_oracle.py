@@ -1,6 +1,9 @@
+import os
+
 from base64 import b64decode
 from binascii import hexlify, unhexlify
 from functools import reduce
+from random import SystemRandom
 
 from Crypto.Cipher import AES
 
@@ -129,24 +132,43 @@ def ecb_mode_dec(key, ct):
     return pt
 
 
+def generate_aes_128_key():
+    return os.urandom(16)
+
+def generate_iv(block_size):
+    return os.urandom(block_size)
+
+
+def pad_with_randomness(plaintext):
+    int_gen = SystemRandom() # uses os.urandom() underneath, hence secure
+    prefix_len = int_gen.randrange(5, 10)
+    postfix_len = int_gen.randrange(5, 10)
+    prefix = os.urandom(prefix_len)
+    postfix = os.urandom(postfix_len)
+    plaintext = prefix + plaintext + postfix
+
+    return plaintext
+
+
+def encryption_oracle(plaintext):
+    key = generate_aes_128_key()
+    plaintext = pad_with_randomness(plaintext)
+    ciphertext = ""
+
+    random_byte = ord(os.urandom(1))
+    if random_byte <= 127:              # Encrypting with ECB
+        ciphertext = ecb_mode_enc(key, plaintext)
+    else:                               # Encrypting with CBC
+        iv = generate_iv(16)
+        ciphertext = cbc_mode_enc(key, plaintext, iv)
+
+    return ciphertext
+
 
 if __name__ == "__main__":
-    key = b"YELLOW SUBMARINE"
-    iv = b"\x00" * 16
+    print("# Debugging")
+
     plaintext = b"hello world, how are you doing there?"
-    
-    print("\n### Encrypting in CBC mode")
-    ciphertext = cbc_mode_enc(key, plaintext, iv)
-    print(ciphertext)
-
-    print("\n### Decrypting in CBC mode")
-    plaintext = cbc_mode_dec(key, ciphertext, iv)
-    print(plaintext)
-
-    print("\n### Encrypting in ECB mode")
-    ciphertext = ecb_mode_enc(key, plaintext)
-    print(ciphertext)
-
-    print("\n### Decrypting in ECB mode")
-    plaintext = ecb_mode_dec(key, ciphertext)
-    print(plaintext)    
+    print(encryption_oracle(plaintext))
+    print(encryption_oracle(plaintext))
+    print(encryption_oracle(plaintext))
