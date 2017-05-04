@@ -36,6 +36,7 @@ def xor(str1, str2):
 
     # adjust string length
     xor_result = xor_result.zfill(len(str1))
+    xor_result = unhexlify(xor_result)
 
     
     return xor_result
@@ -76,7 +77,7 @@ def cbc_mode_enc(key, pt, iv):
 def cbc_mode_dec(key, ct, iv):
     ct_blocks = split_by_n(ct, 16) # 1 block = 16 bytes
 
-    pt = ""
+    pt = b""
     for ct_block in ct_blocks:
         pt_block = block_dec(key, ct_block)
         pt_block = xor(pt_block, iv)
@@ -93,7 +94,6 @@ if __name__ == "__main__":
     ciphertext = get_ciphertext()
     ciphertext = unhexlify(ciphertext)
     plaintext = cbc_mode_dec(key, ciphertext, iv)
-    plaintext = unhexlify(plaintext)
 
     success, plaintext = remove_padding(plaintext)
 
