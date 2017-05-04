@@ -158,17 +158,39 @@ def encryption_oracle(plaintext):
     random_byte = ord(os.urandom(1))
     if random_byte <= 127:              # Encrypting with ECB
         ciphertext = ecb_mode_enc(key, plaintext)
+        mode = "ECB"
     else:                               # Encrypting with CBC
         iv = generate_iv(16)
         ciphertext = cbc_mode_enc(key, plaintext, iv)
+        mode = "CBC"
 
+    # return mode, ciphertext
     return ciphertext
 
 
-if __name__ == "__main__":
-    print("# Debugging")
+def distinguish_oracle_output():
+    plaintext = b"abcdefghijgkmnop" * 4
+    ciphertext = encryption_oracle(plaintext)
+    
+    ct_blocks = split_by_n(ciphertext, 16)
+    distinguisher_blocks = list(ct_blocks)[1:-1]
 
-    plaintext = b"hello world, how are you doing there?"
-    print(encryption_oracle(plaintext))
-    print(encryption_oracle(plaintext))
-    print(encryption_oracle(plaintext))
+    # If the ciphertext was encrypted using ECB the distinguisher_blocks
+    # variable should contain three identical blocks at this point.
+    # List of identicatl elelemnts converted to a set will reduce to one
+    # element.
+    if len(set(distinguisher_blocks)) == 1:
+        mode = "ECB"
+    else:
+        mode = "CBC"
+    
+    print("\nCiphertext is encrypted with {} mode:\n{}".format(mode, ciphertext))
+
+
+if __name__ == "__main__":
+    distinguish_oracle_output()
+    distinguish_oracle_output()
+    distinguish_oracle_output()
+    distinguish_oracle_output()
+    distinguish_oracle_output()
+    distinguish_oracle_output()
